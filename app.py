@@ -535,9 +535,40 @@ class TaskGenerator:
                 progress = 50 + (i * 10)
                 self.update_progress(progress, f"Optimizing (iteration {i}/2)...")
 
-            # 步骤 4: 保存
+            # 步骤 4: 生成封面图
+            self.update_progress(90, "Generating cover image...")
+            self.add_log("Step 4/5: Generating cover image", "info")
+
+            cover_image_path = None
+            try:
+                from cover_generator import CoverGenerator
+                cover_gen = CoverGenerator()
+
+                # 自动选择风格
+                content_lower = article.lower()
+                if any(word in content_lower for word in ['ai', '科技', '技术', '数字', '算法']):
+                    cover_style = 'tech'
+                elif any(word in content_lower for word in ['情感', '成长', '生活', '人生']):
+                    cover_style = 'warm'
+                elif any(word in content_lower for word in ['自然', '环保', '健康']):
+                    cover_style = 'nature'
+                else:
+                    cover_style = 'elegant'
+
+                cover_result = cover_gen.generate_cover(title, article, style=cover_style, output_dir=".")
+
+                if cover_result["success"]:
+                    cover_image_path = cover_result["image_path"]
+                    self.add_log(f"  Cover generated: {cover_image_path} (method: {cover_result['method']})", "success")
+                else:
+                    self.add_log(f"  Cover generation skipped: {cover_result.get('error', 'Unknown error')}", "warning")
+
+            except Exception as e:
+                self.add_log(f"  Cover generation error: {str(e)}", "warning")
+
+            # 步骤 5: 保存
             self.update_progress(100, "Saving article...")
-            self.add_log("Step 4/4: Saving article", "info")
+            self.add_log("Step 5/5: Saving article", "info")
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"article_gemini_web_{timestamp}.md"
@@ -549,8 +580,15 @@ class TaskGenerator:
                 f.write(f"AI Score: {best_score}%\n")
                 f.write(f"Provider: Gemini Web (Client)\n")
                 f.write(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                if cover_image_path:
+                    f.write(f"Cover: {cover_image_path}\n")
                 f.write(f"-->\n\n")
-                # 只保存纯文章内容，不包含标题
+
+                # 如果有封面图，在文章开头插入
+                if cover_image_path:
+                    f.write(f"![封面图]({cover_image_path})\n\n")
+
+                # 写入文章内容
                 f.write(article)
 
             self.add_log(f"Article saved: {filename}", "success")
@@ -778,9 +816,40 @@ class TaskGenerator:
                 progress = 50 + (i * 10)
                 self.update_progress(progress, f"Optimizing (iteration {i}/2)...")
 
-            # 步骤 4: 保存
+            # 步骤 4: 生成封面图
+            self.update_progress(90, "Generating cover image...")
+            self.add_log("Step 4/5: Generating cover image", "info")
+
+            cover_image_path = None
+            try:
+                from cover_generator import CoverGenerator
+                cover_gen = CoverGenerator()
+
+                # 自动选择风格
+                content_lower = article.lower()
+                if any(word in content_lower for word in ['ai', '科技', '技术', '数字', '算法']):
+                    cover_style = 'tech'
+                elif any(word in content_lower for word in ['情感', '成长', '生活', '人生']):
+                    cover_style = 'warm'
+                elif any(word in content_lower for word in ['自然', '环保', '健康']):
+                    cover_style = 'nature'
+                else:
+                    cover_style = 'elegant'
+
+                cover_result = cover_gen.generate_cover(title, article, style=cover_style, output_dir=".")
+
+                if cover_result["success"]:
+                    cover_image_path = cover_result["image_path"]
+                    self.add_log(f"  Cover generated: {cover_image_path} (method: {cover_result['method']})", "success")
+                else:
+                    self.add_log(f"  Cover generation skipped: {cover_result.get('error', 'Unknown error')}", "warning")
+
+            except Exception as e:
+                self.add_log(f"  Cover generation error: {str(e)}", "warning")
+
+            # 步骤 5: 保存
             self.update_progress(100, "Saving article...")
-            self.add_log("Step 4/4: Saving article", "info")
+            self.add_log("Step 5/5: Saving article", "info")
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"article_gemini_deepseek_{timestamp}.md"
@@ -792,8 +861,15 @@ class TaskGenerator:
                 f.write(f"AI Score: {best_score}%\n")
                 f.write(f"Provider: Gemini Web + DeepSeek\n")
                 f.write(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                if cover_image_path:
+                    f.write(f"Cover: {cover_image_path}\n")
                 f.write(f"-->\n\n")
-                # 只保存纯文章内容，不包含标题
+
+                # 如果有封面图，在文章开头插入
+                if cover_image_path:
+                    f.write(f"![封面图]({cover_image_path})\n\n")
+
+                # 写入文章内容
                 f.write(article)
 
             self.add_log(f"Article saved: {filename}", "success")

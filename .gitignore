@@ -47,6 +47,9 @@ temp_publish_*.md
 test_article.md
 test_wechat_publish.md
 
+# 生成的封面图
+cover_*.png
+
 # 临时目录
 temp_wechat/
 temp_wechat_work/
