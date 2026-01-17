@@ -16,6 +16,7 @@ class CoverGenerator:
 
     def __init__(self):
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
+        self.zhipu_api_key = os.getenv("ZHIPU_API_KEY", "")
         self.use_placeholder = os.getenv("USE_PLACEHOLDER_COVER", "false").lower() == "true"
         # gemini-web skill 路径
         self.gemini_web_skill = r"C:\Users\MLoong\.claude\skills\gemini-web"
@@ -42,24 +43,30 @@ class CoverGenerator:
         image_filename = f"cover_{timestamp}.png"
         image_path = os.path.join(output_dir, image_filename)
 
-        # 方式1: 尝试使用 gemini-web skill（优先）
+        # 方式1: 尝试使用 gemini-web skill（优先，如果网络支持）
         gemini_result = self._generate_with_gemini_web(title, article_content, style, image_path)
         if gemini_result["success"]:
             return gemini_result
 
-        # 方式2: 尝试使用 OpenAI DALL-E
+        # 方式2: 尝试使用智谱AI (国内推荐)
+        if self.zhipu_api_key:
+            zhipu_result = self._generate_with_zhipu(title, article_content, style, image_path)
+            if zhipu_result["success"]:
+                return zhipu_result
+
+        # 方式3: 尝试使用 OpenAI DALL-E
         if self.openai_api_key:
             dalle_result = self._generate_with_dalle(title, article_content, style, image_path)
             if dalle_result["success"]:
                 return dalle_result
 
-        # 方式3: 使用占位符
+        # 方式4: 使用占位符
         if self.use_placeholder:
             placeholder_result = self._generate_placeholder(title, style, image_path)
             if placeholder_result["success"]:
                 return placeholder_result
 
-        # 方式4: 跳过封面图
+        # 方式5: 跳过封面图
         return {
             "success": False,
             "image_path": None,
@@ -161,6 +168,106 @@ Create a visually appealing cover that matches the article topic."""
                 "success": False,
                 "image_path": None,
                 "method": "gemini-web",
+                "error": str(e)
+            }
+
+    def _generate_with_zhipu(self, title, article_content, style, image_path):
+        """使用智谱AI (cogview-3) 生成封面"""
+        try:
+            from zhipuai import ZhipuAI
+
+            # 构建符合该风格的提示词
+            style_prompts = {
+                "elegant": "优雅简洁风格，柔和的渐变色背景，精致的线条，平衡的构图，适合公众号文章封面",
+                "tech": "现代科技风格，几何形状，电路图案，发光效果，科技感图标，未来感设计",
+                "warm": "温暖友好风格，柔和的暖色调，圆润形状，阳光元素，亲切感",
+                "bold": "大胆醒目风格，高对比度，强烈色彩，动态形状，吸引眼球",
+                "minimal": "极简主义风格，黑白配色为主，大量留白，简洁线条，禅意",
+                "playful": "趣味风格，柔和色彩，涂鸦元素，可爱角色，活泼有趣",
+                "nature": "自然风格，大地色系，植物图案，自然纹理，平静舒适",
+                "retro": "复古风格，复古色调，怀旧元素，经典插图，怀旧感"
+            }
+
+            style_desc = style_prompts.get(style, style_prompts["elegant"])
+
+            # 构建图片生成提示词
+            prompt = f"""请为文章生成一张封面图：
+
+文章标题：《{title}》
+
+风格要求：
+- {style_desc}
+- 横向宽屏图片（2.35:1 比例，适合公众号封面）
+- 设计简洁专业
+- 适合中文社交媒体
+- 图片中包含标题文字
+- 整体设计要符合文章主题
+
+请生成一张视觉吸引力强的封面图。"""
+
+            # 调用智谱AI图片生成API
+            client = ZhipuAI(api_key=self.zhipu_api_key)
+
+            response = client.images.generations(
+                model="cogview-3",  # 智谱AI的图片生成模型
+                prompt=prompt,
+                size="1024:1024"  # cogview-3 支持的尺寸
+            )
+
+            # 获取图片URL
+            if response and hasattr(response, 'data') and len(response.data) > 0:
+                image_url = response.data[0].url
+
+                # 下载图片
+                img_response = requests.get(image_url, timeout=30)
+                if img_response.status_code == 200:
+                    with open(image_path, 'wb') as f:
+                        f.write(img_response.content)
+
+                    # 使用 Pillow 调整图片尺寸为横向
+                    from PIL import Image
+                    img = Image.open(image_path)
+                    # 裁剪为 2.35:1 比例
+                    width, height = img.size
+                    target_width = 1080
+                    target_height = int(target_width / 2.35)
+
+                    # 居中裁剪
+                    left = (width - target_width) // 2 if width > target_width else 0
+                    top = (height - target_height) // 2 if height > target_height else 0
+                    right = left + target_width
+                    bottom = top + target_height
+
+                    if right <= width and bottom <= height:
+                        img_cropped = img.crop((left, top, right, bottom))
+                        img_cropped.save(image_path, 'PNG')
+
+                    return {
+                        "success": True,
+                        "image_path": image_path,
+                        "method": "zhipu",
+                        "error": None
+                    }
+
+            return {
+                "success": False,
+                "image_path": None,
+                "method": "zhipu",
+                "error": "Failed to generate image"
+            }
+
+        except ImportError:
+            return {
+                "success": False,
+                "image_path": None,
+                "method": "zhipu",
+                "error": "zhipuai not installed"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "image_path": None,
+                "method": "zhipu",
                 "error": str(e)
             }
 
