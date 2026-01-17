@@ -17,9 +17,18 @@ class CoverGenerator:
     def __init__(self):
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
         self.zhipu_api_key = os.getenv("ZHIPU_API_KEY", "")
-        self.use_placeholder = os.getenv("USE_PLACEHOLDER_COVER", "false").lower() == "true"
-        # gemini-web skill 路径
-        self.gemini_web_skill = r"C:\Users\MLoong\.claude\skills\gemini-web"
+        self.use_placeholder = os.getenv("USE_PLACEHOLDER_COVER", "true").lower() == "true"
+        # gemini-web skill 路径 - 支持多个可能的路径
+        possible_paths = [
+            os.path.expanduser("~\\.claude\\skills\\gemini-web"),
+            r"C:\Users\MLoong\.claude\skills\gemini-web",
+            os.path.join(os.path.dirname(__file__), "..", ".claude", "skills", "gemini-web")
+        ]
+        self.gemini_web_skill = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                self.gemini_web_skill = path
+                break
 
     def generate_cover(self, title, article_content, style="elegant", output_dir="."):
         """
@@ -76,6 +85,15 @@ class CoverGenerator:
 
     def _generate_with_gemini_web(self, title, article_content, style, image_path):
         """使用 gemini-web skill 生成封面"""
+        # 检查 gemini-web skill 路径是否存在
+        if not self.gemini_web_skill or not os.path.exists(self.gemini_web_skill):
+            return {
+                "success": False,
+                "image_path": None,
+                "method": "gemini-web",
+                "error": "gemini-web skill not found"
+            }
+
         try:
             # 构建符合该风格的提示词
             style_prompts = {
