@@ -45,15 +45,31 @@ echo.
 REM 在最小化窗口中启动服务
 start /MIN "公众号写稿系统 - 后台服务（请勿关闭）" cmd /c "python app.py"
 
-REM 等待服务启动
+REM 等待服务启动并检测是否就绪
 echo [2/3] 等待服务启动...
-timeout /t 4 /nobreak >nul
+set WAIT_COUNT=0
+:WAIT_LOOP
+timeout /t 2 /nobreak >nul
+set /a WAIT_COUNT+=2
+netstat -ano | findstr ":5000.*LISTENING" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo 服务已就绪！
+    goto :OPEN_BROWSER
+)
+if %WAIT_COUNT% lss 15 (
+    echo 等待中... (%WAIT_COUNT%秒)
+    goto :WAIT_LOOP
+) else (
+    echo 警告：服务启动超时，仍尝试打开浏览器
+)
 
+:OPEN_BROWSER
 echo [3/3] 打开应用界面...
 echo.
 
-REM 打开浏览器
-start "" http://localhost:5000
+REM 打开浏览器（使用多种方式尝试）
+echo 正在打开浏览器...
+start "" "http://localhost:5000" 2>nul
 
 echo.
 echo ============================================
