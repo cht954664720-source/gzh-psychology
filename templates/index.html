@@ -448,26 +448,27 @@
         </div>
 
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div class="provider-select" id="providerSelect" style="flex: 1;">
-                    <div class="provider-option active" data-provider="gemini">
-                        <h3>🤖 Gemini 3 Pro</h3>
-                        <p>官方 API，深度思考</p>
-                    </div>
-                    <div class="provider-option" data-provider="gemini-web">
-                        <h3>🌐 Gemini Web</h3>
-                        <p>客户端版，无配额限制</p>
-                    </div>
-                    <div class="provider-option" data-provider="zhipu">
-                        <h3>🧠 智谱 GLM</h3>
-                        <p>中文专家，快速稳定</p>
-                    </div>
-                    <div class="provider-option" data-provider="gemini-deepseek">
-                        <h3>🚀 Gemini Web + DeepSeek</h3>
-                        <p>Gemini Web大纲 + DeepSeek写作</p>
-                    </div>
+            <div class="provider-select" id="providerSelect">
+                <div class="provider-option active" data-provider="gemini">
+                    <h3>🤖 Gemini 3 Pro</h3>
+                    <p>官方 API，深度思考</p>
                 </div>
-                <button class="btn btn-secondary" onclick="openPromptConfig()" style="margin-left: 15px; padding: 15px 20px; white-space: nowrap;">
+                <div class="provider-option" data-provider="gemini-web">
+                    <h3>🌐 Gemini Web</h3>
+                    <p>客户端版，无配额限制</p>
+                </div>
+                <div class="provider-option" data-provider="zhipu">
+                    <h3>🧠 智谱 GLM</h3>
+                    <p>中文专家，快速稳定</p>
+                </div>
+                <div class="provider-option" data-provider="gemini-deepseek">
+                    <h3>🚀 Gemini Web + DeepSeek</h3>
+                    <p>Gemini Web大纲 + DeepSeek写作</p>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 15px;">
+                <button class="btn btn-secondary" onclick="openPromptConfig()" style="padding: 10px 20px;">
                     ⚙️ 流程配置
                 </button>
             </div>
@@ -1145,6 +1146,12 @@
 
             // 加载配置
             await loadPromptsConfig();
+
+            // 获取当前选中的 provider
+            const activeProvider = document.querySelector('.provider-option.active');
+            if (activeProvider) {
+                currentEditingProvider = activeProvider.getAttribute('data-provider');
+            }
 
             // 显示当前选中的 provider 配置
             showProviderConfig(currentEditingProvider);

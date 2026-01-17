@@ -3,7 +3,7 @@
 支持选择 Gemini 或智谱，实时追踪进度
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, make_response
 from flask_cors import CORS
 import threading
 import queue
