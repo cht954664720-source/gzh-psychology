@@ -1,9 +1,11 @@
 """
 封面图生成模块
 支持多种方式生成文章封面图
+优先使用 gemini-web skill，然后回退到其他方式
 """
 
 import os
+import subprocess
 import requests
 from datetime import datetime
 import re
@@ -15,6 +17,8 @@ class CoverGenerator:
     def __init__(self):
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
         self.use_placeholder = os.getenv("USE_PLACEHOLDER_COVER", "false").lower() == "true"
+        # gemini-web skill 路径
+        self.gemini_web_skill = r"C:\Users\MLoong\.claude\skills\gemini-web"
 
     def generate_cover(self, title, article_content, style="elegant", output_dir="."):
         """
@@ -38,25 +42,127 @@ class CoverGenerator:
         image_filename = f"cover_{timestamp}.png"
         image_path = os.path.join(output_dir, image_filename)
 
-        # 方式1: 尝试使用 OpenAI DALL-E
+        # 方式1: 尝试使用 gemini-web skill（优先）
+        gemini_result = self._generate_with_gemini_web(title, article_content, style, image_path)
+        if gemini_result["success"]:
+            return gemini_result
+
+        # 方式2: 尝试使用 OpenAI DALL-E
         if self.openai_api_key:
-            result = self._generate_with_dalle(title, article_content, style, image_path)
-            if result["success"]:
-                return result
+            dalle_result = self._generate_with_dalle(title, article_content, style, image_path)
+            if dalle_result["success"]:
+                return dalle_result
 
-        # 方式2: 使用占位符
+        # 方式3: 使用占位符
         if self.use_placeholder:
-            result = self._generate_placeholder(title, style, image_path)
-            if result["success"]:
-                return result
+            placeholder_result = self._generate_placeholder(title, style, image_path)
+            if placeholder_result["success"]:
+                return placeholder_result
 
-        # 方式3: 跳过封面图
+        # 方式4: 跳过封面图
         return {
             "success": False,
             "image_path": None,
             "method": "none",
             "error": "No image generation method configured"
         }
+
+    def _generate_with_gemini_web(self, title, article_content, style, image_path):
+        """使用 gemini-web skill 生成封面"""
+        try:
+            # 构建符合该风格的提示词
+            style_prompts = {
+                "elegant": "优雅简洁风格，柔和的渐变色背景，精致的线条，平衡的构图",
+                "tech": "现代科技风格，几何形状，电路图案，发光效果，科技感图标",
+                "warm": "温暖友好风格，柔和的暖色调，圆润形状，阳光元素",
+                "bold": "大胆醒目风格，高对比度，强烈色彩，动态形状",
+                "minimal": "极简主义风格，黑白配色为主，大量留白，简洁线条",
+                "playful": "趣味风格，柔和色彩，涂鸦元素，可爱角色",
+                "nature": "自然风格，大地色系，植物图案，自然纹理",
+                "retro": "复古风格，复古色调，怀旧元素，经典插图"
+            }
+
+            style_desc = style_prompts.get(style, style_prompts["elegant"])
+
+            # 构建图片生成提示词
+            prompt = f"""Generate a cover image for an article:
+
+Title: {title}
+
+Style: {style_desc}
+
+Requirements:
+- Horizontal wide image (2.35:1 aspect ratio, suitable for article cover)
+- Clean, professional design
+- Chinese social media style
+- Include the title text visually in the image
+- {style_desc} design aesthetic
+
+Create a visually appealing cover that matches the article topic."""
+
+            # 使用 gemini-web skill 生成图片
+            skill_script = os.path.join(self.gemini_web_skill, "scripts", "main.ts")
+
+            cmd = [
+                "npx", "-y", "bun", skill_script,
+                "--prompt", prompt,
+                "--image", image_path
+            ]
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                cwd=self.gemini_web_skill
+            )
+
+            # 检查是否成功生成
+            if os.path.exists(image_path) and os.path.getsize(image_path) > 0:
+                return {
+                    "success": True,
+                    "image_path": image_path,
+                    "method": "gemini-web",
+                    "error": None
+                }
+
+            # 检查错误消息
+            if "未开通图片创建功能" in result.stdout or "未开通图片创建功能" in result.stderr:
+                return {
+                    "success": False,
+                    "image_path": None,
+                    "method": "gemini-web",
+                    "error": "Image generation not available in this region"
+                }
+
+            return {
+                "success": False,
+                "image_path": None,
+                "method": "gemini-web",
+                "error": f"Generation failed: {result.stdout[:200]}..."
+            }
+
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "image_path": None,
+                "method": "gemini-web",
+                "error": "Timeout after 60 seconds"
+            }
+        except FileNotFoundError:
+            return {
+                "success": False,
+                "image_path": None,
+                "method": "gemini-web",
+                "error": "gemini-web skill not found"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "image_path": None,
+                "method": "gemini-web",
+                "error": str(e)
+            }
 
     def _generate_with_dalle(self, title, article_content, style, image_path):
         """使用 OpenAI DALL-E 生成封面"""
