@@ -448,23 +448,28 @@
         </div>
 
         <div class="card">
-            <div class="provider-select" id="providerSelect">
-                <div class="provider-option active" data-provider="gemini">
-                    <h3>🤖 Gemini 3 Pro</h3>
-                    <p>官方 API，深度思考</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="provider-select" id="providerSelect" style="flex: 1;">
+                    <div class="provider-option active" data-provider="gemini">
+                        <h3>🤖 Gemini 3 Pro</h3>
+                        <p>官方 API，深度思考</p>
+                    </div>
+                    <div class="provider-option" data-provider="gemini-web">
+                        <h3>🌐 Gemini Web</h3>
+                        <p>客户端版，无配额限制</p>
+                    </div>
+                    <div class="provider-option" data-provider="zhipu">
+                        <h3>🧠 智谱 GLM</h3>
+                        <p>中文专家，快速稳定</p>
+                    </div>
+                    <div class="provider-option" data-provider="gemini-deepseek">
+                        <h3>🚀 Gemini Web + DeepSeek</h3>
+                        <p>Gemini Web大纲 + DeepSeek写作</p>
+                    </div>
                 </div>
-                <div class="provider-option" data-provider="gemini-web">
-                    <h3>🌐 Gemini Web</h3>
-                    <p>客户端版，无配额限制</p>
-                </div>
-                <div class="provider-option" data-provider="zhipu">
-                    <h3>🧠 智谱 GLM</h3>
-                    <p>中文专家，快速稳定</p>
-                </div>
-                <div class="provider-option" data-provider="gemini-deepseek">
-                    <h3>🚀 Gemini Web + DeepSeek</h3>
-                    <p>Gemini Web大纲 + DeepSeek写作</p>
-                </div>
+                <button class="btn btn-secondary" onclick="openPromptConfig()" style="margin-left: 15px; padding: 15px 20px; white-space: nowrap;">
+                    ⚙️ 流程配置
+                </button>
             </div>
 
             <div class="controls">
@@ -1128,6 +1133,281 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // ========== 流程配置相关 ==========
+        let promptsConfig = {};
+        let currentEditingProvider = 'gemini-web';
+
+        // 打开配置界面
+        async function openPromptConfig() {
+            const modal = document.getElementById('promptConfigModal');
+            modal.style.display = 'flex';
+
+            // 加载配置
+            await loadPromptsConfig();
+
+            // 显示当前选中的 provider 配置
+            showProviderConfig(currentEditingProvider);
+        }
+
+        // 关闭配置界面
+        function closePromptConfig() {
+            document.getElementById('promptConfigModal').style.display = 'none';
+        }
+
+        // 加载配置
+        async function loadPromptsConfig() {
+            try {
+                const response = await fetch('/api/prompts-config');
+                const data = await response.json();
+
+                if (data.success) {
+                    promptsConfig = data.config;
+                    populateProviderSelect();
+                } else {
+                    alert('加载配置失败：' + data.error);
+                }
+            } catch (error) {
+                alert('加载配置失败：' + error.message);
+            }
+        }
+
+        // 填充 provider 选择器
+        function populateProviderSelect() {
+            const select = document.getElementById('configProviderSelect');
+            select.innerHTML = '';
+
+            for (const [key, value] of Object.entries(promptsConfig)) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = value.name || key;
+                select.appendChild(option);
+            }
+
+            select.value = currentEditingProvider;
+        }
+
+        // 显示指定 provider 的配置
+        function showProviderConfig(provider) {
+            currentEditingProvider = provider;
+            const config = promptsConfig[provider];
+
+            // 显示配置名称和描述
+            document.getElementById('configProviderName').textContent = config.name || provider;
+
+            // 填充基本设置
+            document.getElementById('configIterations').value = config.ai_iterations || 2;
+            document.getElementById('configTargetScore').value = config.target_ai_score || 30;
+            document.getElementById('configArticleLength').value = config.article_length || 2000;
+
+            // 填充步骤配置
+            const stepsContainer = document.getElementById('configStepsContainer');
+            stepsContainer.innerHTML = '';
+
+            if (config.steps && config.steps.length > 0) {
+                config.steps.forEach((step, index) => {
+                    const stepHtml = createStepEditor(index, step);
+                    stepsContainer.insertAdjacentHTML('beforeend', stepHtml);
+                });
+            }
+        }
+
+        // 创建步骤编辑器
+        function createStepEditor(index, step) {
+            return `
+                <div class="config-step-item" data-step-index="${index}">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" class="step-name-input" value="${step.name || ''}" placeholder="步骤名称" style="flex: 1;">
+                        ${step.model ? `<input type="text" class="step-model-input" value="${step.model || ''}" placeholder="模型 (可选)" style="flex: 1;">` : ''}
+                    </div>
+                    <textarea class="step-prompt-input" rows="6" placeholder="提示词（可使用变量：{domain}, {title}, {outline}, {article}, {length}）">${step.prompt || ''}</textarea>
+                    <button class="btn btn-secondary" onclick="removeStep(${index})" style="margin-top: 5px; padding: 5px 10px; font-size: 12px;">🗑️ 删除步骤</button>
+                </div>
+            `;
+        }
+
+        // 添加步骤
+        function addStep() {
+            const stepsContainer = document.getElementById('configStepsContainer');
+            const index = stepsContainer.children.length;
+            const stepHtml = createStepEditor(index, { name: '新步骤', prompt: '' });
+            stepsContainer.insertAdjacentHTML('beforeend', stepHtml);
+        }
+
+        // 删除步骤
+        function removeStep(index) {
+            const stepItem = document.querySelector(`.config-step-item[data-step-index="${index}"]`);
+            if (stepItem) {
+                stepItem.remove();
+            }
+        }
+
+        // 保存配置
+        async function savePromptsConfig() {
+            try {
+                // 收集配置数据
+                const config = promptsConfig[currentEditingProvider];
+
+                // 基本设置
+                config.ai_iterations = parseInt(document.getElementById('configIterations').value) || 2;
+                config.target_ai_score = parseInt(document.getElementById('configTargetScore').value) || 30;
+                config.article_length = parseInt(document.getElementById('configArticleLength').value) || 2000;
+
+                // 收集步骤
+                const steps = [];
+                const stepItems = document.querySelectorAll('.config-step-item');
+
+                stepItems.forEach(item => {
+                    const name = item.querySelector('.step-name-input').value;
+                    const modelInput = item.querySelector('.step-model-input');
+                    const prompt = item.querySelector('.step-prompt-input').value;
+
+                    const step = { name, prompt };
+                    if (modelInput) {
+                        step.model = modelInput.value;
+                    }
+
+                    steps.push(step);
+                });
+
+                config.steps = steps;
+
+                // 保存到服务器
+                const response = await fetch('/api/prompts-config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ config: promptsConfig })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ 配置已保存！');
+                    closePromptConfig();
+                } else {
+                    alert('❌ 保存失败：' + data.error);
+                }
+            } catch (error) {
+                alert('❌ 保存失败：' + error.message);
+            }
+        }
+
+        // 切换 provider 时显示对应配置
+        function onProviderChange() {
+            const select = document.getElementById('configProviderSelect');
+            showProviderConfig(select.value);
+        }
     </script>
+
+    <!-- 流程配置模态框 -->
+    <div id="promptConfigModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">⚙️ 流程配置</h2>
+                <button onclick="closePromptConfig()" style="background: none; border: none; font-size: 24px; cursor: pointer;">✕</button>
+            </div>
+
+            <!-- Provider 选择 -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">选择模型：</label>
+                <select id="configProviderSelect" onchange="onProviderChange()" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 15px;">
+                </select>
+            </div>
+
+            <!-- 基本设置 -->
+            <div style="margin-bottom: 20px;">
+                <h3 id="configProviderName" style="margin-bottom: 15px; color: #667eea;">配置</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">AI 迭代次数：</label>
+                        <input type="number" id="configIterations" min="1" max="10" value="2" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">目标 AI 评分：</label>
+                        <input type="number" id="configTargetScore" min="0" max="100" value="30" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">文章字数：</label>
+                        <input type="number" id="configArticleLength" min="500" max="10000" value="2000" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤配置 -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">生成步骤</h3>
+                    <button class="btn btn-secondary" onclick="addStep()" style="padding: 8px 16px; font-size: 14px;">➕ 添加步骤</button>
+                </div>
+                <div id="configStepsContainer" style="max-height: 400px; overflow-y: auto;">
+                </div>
+            </div>
+
+            <!-- 变量说明 -->
+            <div style="background: #f0f4ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 14px; color: #666;">
+                    <strong>可用变量：</strong> {domain} - 领域 | {title} - 标题 | {outline} - 大纲 | {article} - 文章内容 | {length} - 字数
+                </p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn btn-secondary" onclick="closePromptConfig()" style="padding: 12px 24px;">取消</button>
+                <button class="btn btn-primary" onclick="savePromptsConfig()" style="padding: 12px 24px;">💾 保存配置</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 800px;
+        }
+
+        .config-step-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .step-name-input, .step-model-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .step-prompt-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            resize: vertical;
+        }
+    </style>
 </body>
 </html>

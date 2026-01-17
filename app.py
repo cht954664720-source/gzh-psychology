@@ -1330,6 +1330,73 @@ def get_history_file(filename):
         return jsonify({"success": False, "error": str(e)})
 
 
+@app.route('/api/prompts-config', methods=['GET'])
+def get_prompts_config():
+    """获取提示词配置"""
+    try:
+        import json
+        config_file = os.path.join(os.path.dirname(__file__), "prompts_config.json")
+
+        if not os.path.exists(config_file):
+            # 如果配置文件不存在，返回默认配置
+            return jsonify({
+                "success": True,
+                "config": {
+                    "gemini-web": {
+                        "name": "Gemini Web (Client)",
+                        "steps": [
+                            {
+                                "name": "选题生成",
+                                "prompt": "作为公众号运营专家，请在 {domain} 领域构思一个爆款选题。\\n\\n要求：\\n1. 标题吸睛（不超过 30 字）\\n2. 有争议性或共鸣点\\n3. 给出简要大纲\\n\\n格式：\\n标题：《XXX》\\n大纲：XXX"
+                            }
+                        ],
+                        "ai_iterations": 2,
+                        "target_ai_score": 30,
+                        "article_length": 2000
+                    }
+                }
+            })
+
+        with open(config_file, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+
+        response = make_response(jsonify({
+            "success": True,
+            "config": config
+        }))
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return response
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/api/prompts-config', methods=['POST'])
+def save_prompts_config():
+    """保存提示词配置"""
+    try:
+        import json
+        data = request.json
+        config = data.get("config")
+
+        if not config:
+            return jsonify({"success": False, "error": "配置不能为空"})
+
+        config_file = os.path.join(os.path.dirname(__file__), "prompts_config.json")
+
+        # 保存配置
+        with open(config_file, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+
+        return jsonify({
+            "success": True,
+            "message": "配置已保存"
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
 if __name__ == '__main__':
     print("=" * 60)
     print("Auto Article Generator - Web Interface")
