@@ -3,7 +3,7 @@
 支持选择 Gemini 或智谱，实时追踪进度
 """
 
-from flask import Flask, render_template, jsonify, request, make_response
+from flask import Flask, render_template, jsonify, request, make_response, send_from_directory
 from flask_cors import CORS
 import threading
 import queue
@@ -198,9 +198,14 @@ class TaskGenerator:
 
             self.add_log(f"Article saved: {filename}", "success")
 
+            # 构建预览内容（包含封面图）
+            preview_content = article
+            if cover_image_path:
+                preview_content = f"![封面图]({cover_image_path})\n\n" + article
+
             current_status["result"] = {
                 "title": title,
-                "content": article,  # 纯文章内容，不包含标题
+                "content": preview_content,
                 "ai_score": best_score,
                 "filename": filename,
                 "provider": "Gemini 3 Pro"
@@ -397,9 +402,14 @@ class TaskGenerator:
 
             self.add_log(f"Article saved: {filename}", "success")
 
+            # 构建预览内容（包含封面图）
+            preview_content = article
+            if cover_image_path:
+                preview_content = f"![封面图]({cover_image_path})\n\n" + article
+
             current_status["result"] = {
                 "title": title,
-                "content": article,  # 纯文章内容，不包含标题
+                "content": preview_content,
                 "ai_score": best_score,
                 "filename": filename,
                 "provider": "Zhipu GLM-4.7"
@@ -593,9 +603,14 @@ class TaskGenerator:
 
             self.add_log(f"Article saved: {filename}", "success")
 
+            # 构建预览内容（包含封面图）
+            preview_content = article
+            if cover_image_path:
+                preview_content = f"![封面图]({cover_image_path})\n\n" + article
+
             current_status["result"] = {
                 "title": title,
-                "content": article,  # 纯文章内容，不包含标题
+                "content": preview_content,
                 "ai_score": best_score,
                 "filename": filename,
                 "provider": "Gemini Web (Client)"
@@ -874,9 +889,14 @@ class TaskGenerator:
 
             self.add_log(f"Article saved: {filename}", "success")
 
+            # 构建预览内容（包含封面图）
+            preview_content = article
+            if cover_image_path:
+                preview_content = f"![封面图]({cover_image_path})\n\n" + article
+
             current_status["result"] = {
                 "title": title,
-                "content": article,
+                "content": preview_content,
                 "ai_score": best_score,
                 "filename": filename,
                 "provider": "Gemini Web + DeepSeek"
@@ -1395,6 +1415,14 @@ def save_prompts_config():
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/cover/<path:filename>')
+def serve_cover(filename):
+    """提供封面图片访问"""
+    import os
+    cover_dir = os.path.dirname(__file__)
+    return send_from_directory(cover_dir, filename)
 
 
 if __name__ == '__main__':

@@ -752,11 +752,18 @@
 
             // 将 Markdown 转换为 HTML（简单处理）
             let html = content
+                // 处理图片 ![alt](url) - 转换相对路径为绝对路径
+                .replace(/!\[([^\]]*)\]\(\.\/([^)]+)\)/gim, '<img src="/cover/$2" alt="$1" style="max-width: 100%; border-radius: 8px; margin: 20px 0;">')
+                // 处理其他图片路径
+                .replace(/!\[([^\]]*)\]\(([^)]+)\)/gim, '<img src="$2" alt="$1" style="max-width: 100%; border-radius: 8px; margin: 20px 0;">')
+                // 处理标题
                 .replace(/^# (.*$)/gim, '<h1>$1</h1>')
                 .replace(/^## (.*$)/gim, '<h2>$1</h2>')
                 .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                // 处理粗体和斜体
                 .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
                 .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                // 处理段落和换行
                 .replace(/\n\n/gim, '</p><p>')
                 .replace(/\n/gim, '<br>');
 
@@ -1018,10 +1025,17 @@
 
                 // 将 Markdown 转换为 HTML
                 let html = content
+                    // 处理图片 ![alt](url) - 转换相对路径为绝对路径
+                    .replace(/!\[([^\]]*)\]\(\.\/([^)]+)\)/gim, '<img src="/cover/$2" alt="$1" style="max-width: 100%; border-radius: 8px; margin: 20px 0;">')
+                    // 处理其他图片路径
+                    .replace(/!\[([^\]]*)\]\(([^)]+)\)/gim, '<img src="$2" alt="$1" style="max-width: 100%; border-radius: 8px; margin: 20px 0;">')
+                    // 处理标题
                     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
                     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                    // 处理粗体和斜体
                     .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
                     .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                    // 处理段落和换行
                     .replace(/\n\n/gim, '</p><p>')
                     .replace(/\n/gim, '<br>');
 
