@@ -28,9 +28,9 @@ echo   公众号写稿系统 - 正在启动
 echo ============================================
 echo.
 
-REM 检查是否已经在运行
-tasklist /FI "WINDOWTITLE eq 公众号写稿系统 - 后台服务*" 2>nul | find /c "cmd.exe" >nul
-if %errorlevel% gtr 0 (
+REM 检查端口 5000 是否已被占用（Flask 是否已运行）
+netstat -ano | findstr :5000 >nul 2>&1
+if %errorlevel% equ 0 (
     echo [检测] 后台服务已在运行
     echo.
     echo 直接打开应用界面...
