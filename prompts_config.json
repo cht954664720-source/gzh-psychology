@@ -1,5 +1,5 @@
 {
-  "_comment": "流程配置说明：steps 是基于提示词的生成步骤。封面图生成是自动执行的最后步骤，不在 steps 中配置。",
+  "_comment": "流程配置说明：steps 是基于提示词的生成步骤。cover 是封面图自动生成配置。",
   "gemini-web": {
     "name": "Gemini Web (Client)",
     "steps": [
@@ -19,7 +19,12 @@
     "ai_iterations": 2,
     "target_ai_score": 30,
     "article_length": 2000,
-    "_note": "封面图生成是自动步骤：根据文章内容自动选择风格(elegant/tech/warm/nature)，使用占位符/智谱AI/gemini-web/OpenAI生成"
+    "cover": {
+      "enabled": true,
+      "style": "auto",
+      "methods": ["placeholder", "zhipu", "gemini-web", "dalle"],
+      "note": "生成方式优先级：按顺序尝试，直到成功。style: auto 表示根据文章内容自动选择风格"
+    }
   },
   "gemini-deepseek": {
     "name": "Gemini Web + DeepSeek",
@@ -43,7 +48,12 @@
     "ai_iterations": 2,
     "target_ai_score": 30,
     "article_length": 2000,
-    "_note": "封面图生成是自动步骤：根据文章内容自动选择风格(elegant/tech/warm/nature)，使用占位符/智谱AI/gemini-web/OpenAI生成"
+    "cover": {
+      "enabled": true,
+      "style": "auto",
+      "methods": ["placeholder", "zhipu", "gemini-web", "dalle"],
+      "note": "生成方式优先级：按顺序尝试，直到成功。style: auto 表示根据文章内容自动选择风格"
+    }
   },
   "zhipu": {
     "name": "智谱 GLM-4.7",
@@ -64,6 +74,11 @@
     "ai_iterations": 5,
     "target_ai_score": 30,
     "article_length": 2000,
-    "_note": "封面图生成是自动步骤：根据文章内容自动选择风格(elegant/tech/warm/nature)，使用占位符/智谱AI/gemini-web/OpenAI生成"
+    "cover": {
+      "enabled": true,
+      "style": "auto",
+      "methods": ["placeholder", "zhipu", "gemini-web", "dalle"],
+      "note": "生成方式优先级：按顺序尝试，直到成功。style: auto 表示根据文章内容自动选择风格"
+    }
   }
 }

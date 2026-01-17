@@ -551,27 +551,49 @@ class TaskGenerator:
 
             cover_image_path = None
             try:
-                from cover_generator import CoverGenerator
-                cover_gen = CoverGenerator()
+                # 读取封面图配置
+                import json
+                import os
+                config_file = os.path.join(os.path.dirname(__file__), "prompts_config.json")
 
-                # 自动选择风格
-                content_lower = article.lower()
-                if any(word in content_lower for word in ['ai', '科技', '技术', '数字', '算法']):
-                    cover_style = 'tech'
-                elif any(word in content_lower for word in ['情感', '成长', '生活', '人生']):
-                    cover_style = 'warm'
-                elif any(word in content_lower for word in ['自然', '环保', '健康']):
-                    cover_style = 'nature'
+                cover_config = {"enabled": True, "style": "auto", "methods": ["placeholder", "zhipu", "gemini-web", "dalle"]}
+                if os.path.exists(config_file):
+                    with open(config_file, 'r', encoding='utf-8') as f:
+                        all_config = json.load(f)
+                        provider_key = "gemini-web"
+                        if provider_key in all_config and "cover" in all_config[provider_key]:
+                            cover_config = all_config[provider_key]["cover"]
+
+                # 检查是否启用封面图
+                if not cover_config.get("enabled", True):
+                    self.add_log("  Cover generation disabled in config", "info")
                 else:
-                    cover_style = 'elegant'
+                    from cover_generator import CoverGenerator
+                    cover_gen = CoverGenerator()
 
-                cover_result = cover_gen.generate_cover(title, article, style=cover_style, output_dir=".")
+                    # 确定风格
+                    cover_style = cover_config.get("style", "auto")
+                    if cover_style == "auto":
+                        # 自动选择风格
+                        content_lower = article.lower()
+                        if any(word in content_lower for word in ['ai', '科技', '技术', '数字', '算法']):
+                            cover_style = 'tech'
+                        elif any(word in content_lower for word in ['情感', '成长', '生活', '人生']):
+                            cover_style = 'warm'
+                        elif any(word in content_lower for word in ['自然', '环保', '健康']):
+                            cover_style = 'nature'
+                        else:
+                            cover_style = 'elegant'
 
-                if cover_result["success"]:
-                    cover_image_path = cover_result["image_path"]
-                    self.add_log(f"  Cover generated: {cover_image_path} (method: {cover_result['method']})", "success")
-                else:
-                    self.add_log(f"  Cover generation skipped: {cover_result.get('error', 'Unknown error')}", "warning")
+                    # 按配置的优先级尝试生成
+                    methods = cover_config.get("methods", ["placeholder", "zhipu", "gemini-web", "dalle"])
+                    cover_result = cover_gen.generate_cover(title, article, style=cover_style, output_dir=".", methods=methods)
+
+                    if cover_result["success"]:
+                        cover_image_path = cover_result["image_path"]
+                        self.add_log(f"  Cover generated: {cover_image_path} (method: {cover_result['method']})", "success")
+                    else:
+                        self.add_log(f"  Cover generation skipped: {cover_result.get('error', 'Unknown error')}", "warning")
 
             except Exception as e:
                 self.add_log(f"  Cover generation error: {str(e)}", "warning")
@@ -837,27 +859,49 @@ class TaskGenerator:
 
             cover_image_path = None
             try:
-                from cover_generator import CoverGenerator
-                cover_gen = CoverGenerator()
+                # 读取封面图配置
+                import json
+                import os
+                config_file = os.path.join(os.path.dirname(__file__), "prompts_config.json")
 
-                # 自动选择风格
-                content_lower = article.lower()
-                if any(word in content_lower for word in ['ai', '科技', '技术', '数字', '算法']):
-                    cover_style = 'tech'
-                elif any(word in content_lower for word in ['情感', '成长', '生活', '人生']):
-                    cover_style = 'warm'
-                elif any(word in content_lower for word in ['自然', '环保', '健康']):
-                    cover_style = 'nature'
+                cover_config = {"enabled": True, "style": "auto", "methods": ["placeholder", "zhipu", "gemini-web", "dalle"]}
+                if os.path.exists(config_file):
+                    with open(config_file, 'r', encoding='utf-8') as f:
+                        all_config = json.load(f)
+                        provider_key = "gemini-deepseek"
+                        if provider_key in all_config and "cover" in all_config[provider_key]:
+                            cover_config = all_config[provider_key]["cover"]
+
+                # 检查是否启用封面图
+                if not cover_config.get("enabled", True):
+                    self.add_log("  Cover generation disabled in config", "info")
                 else:
-                    cover_style = 'elegant'
+                    from cover_generator import CoverGenerator
+                    cover_gen = CoverGenerator()
 
-                cover_result = cover_gen.generate_cover(title, article, style=cover_style, output_dir=".")
+                    # 确定风格
+                    cover_style = cover_config.get("style", "auto")
+                    if cover_style == "auto":
+                        # 自动选择风格
+                        content_lower = article.lower()
+                        if any(word in content_lower for word in ['ai', '科技', '技术', '数字', '算法']):
+                            cover_style = 'tech'
+                        elif any(word in content_lower for word in ['情感', '成长', '生活', '人生']):
+                            cover_style = 'warm'
+                        elif any(word in content_lower for word in ['自然', '环保', '健康']):
+                            cover_style = 'nature'
+                        else:
+                            cover_style = 'elegant'
 
-                if cover_result["success"]:
-                    cover_image_path = cover_result["image_path"]
-                    self.add_log(f"  Cover generated: {cover_image_path} (method: {cover_result['method']})", "success")
-                else:
-                    self.add_log(f"  Cover generation skipped: {cover_result.get('error', 'Unknown error')}", "warning")
+                    # 按配置的优先级尝试生成
+                    methods = cover_config.get("methods", ["placeholder", "zhipu", "gemini-web", "dalle"])
+                    cover_result = cover_gen.generate_cover(title, article, style=cover_style, output_dir=".", methods=methods)
+
+                    if cover_result["success"]:
+                        cover_image_path = cover_result["image_path"]
+                        self.add_log(f"  Cover generated: {cover_image_path} (method: {cover_result['method']})", "success")
+                    else:
+                        self.add_log(f"  Cover generation skipped: {cover_result.get('error', 'Unknown error')}", "warning")
 
             except Exception as e:
                 self.add_log(f"  Cover generation error: {str(e)}", "warning")

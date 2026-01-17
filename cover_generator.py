@@ -30,7 +30,7 @@ class CoverGenerator:
                 self.gemini_web_skill = path
                 break
 
-    def generate_cover(self, title, article_content, style="elegant", output_dir="."):
+    def generate_cover(self, title, article_content, style="elegant", output_dir=".", methods=None):
         """
         生成封面图
 
@@ -39,6 +39,7 @@ class CoverGenerator:
             article_content: 文章内容（用于分析主题）
             style: 封面风格 (elegant, tech, warm, bold, minimal, playful, nature, retro)
             output_dir: 输出目录
+            methods: 生成方式优先级列表（可选），默认 ["placeholder", "zhipu", "gemini-web", "dalle"]
 
         Returns:
             dict: {
@@ -52,35 +53,38 @@ class CoverGenerator:
         image_filename = f"cover_{timestamp}.png"
         image_path = os.path.join(output_dir, image_filename)
 
-        # 方式1: 尝试使用 gemini-web skill（优先，如果网络支持）
-        gemini_result = self._generate_with_gemini_web(title, article_content, style, image_path)
-        if gemini_result["success"]:
-            return gemini_result
+        # 使用自定义优先级或默认优先级
+        if methods is None:
+            methods = ["placeholder", "zhipu", "gemini-web", "dalle"]
 
-        # 方式2: 尝试使用智谱AI (国内推荐)
-        if self.zhipu_api_key:
-            zhipu_result = self._generate_with_zhipu(title, article_content, style, image_path)
-            if zhipu_result["success"]:
-                return zhipu_result
+        # 按优先级尝试各种生成方式
+        for method in methods:
+            if method == "gemini-web":
+                result = self._generate_with_gemini_web(title, article_content, style, image_path)
+                if result["success"]:
+                    return result
+            elif method == "zhipu":
+                if self.zhipu_api_key:
+                    result = self._generate_with_zhipu(title, article_content, style, image_path)
+                    if result["success"]:
+                        return result
+            elif method == "dalle":
+                if self.openai_api_key:
+                    result = self._generate_with_dalle(title, article_content, style, image_path)
+                    if result["success"]:
+                        return result
+            elif method == "placeholder":
+                if self.use_placeholder:
+                    result = self._generate_placeholder(title, style, image_path)
+                    if result["success"]:
+                        return result
 
-        # 方式3: 尝试使用 OpenAI DALL-E
-        if self.openai_api_key:
-            dalle_result = self._generate_with_dalle(title, article_content, style, image_path)
-            if dalle_result["success"]:
-                return dalle_result
-
-        # 方式4: 使用占位符
-        if self.use_placeholder:
-            placeholder_result = self._generate_placeholder(title, style, image_path)
-            if placeholder_result["success"]:
-                return placeholder_result
-
-        # 方式5: 跳过封面图
+        # 所有方式都失败
         return {
             "success": False,
             "image_path": None,
             "method": "none",
-            "error": "No image generation method configured"
+            "error": "No image generation method configured or all methods failed"
         }
 
     def _generate_with_gemini_web(self, title, article_content, style, image_path):

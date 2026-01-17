@@ -1229,6 +1229,12 @@
             document.getElementById('configTargetScore').value = config.target_ai_score || 30;
             document.getElementById('configArticleLength').value = config.article_length || 2000;
 
+            // 填充封面图配置
+            const coverConfig = config.cover || { enabled: true, style: 'auto', methods: ['placeholder', 'zhipu', 'gemini-web', 'dalle'] };
+            document.getElementById('configCoverEnabled').checked = coverConfig.enabled !== false;
+            document.getElementById('configCoverStyle').value = coverConfig.style || 'auto';
+            document.getElementById('configCoverMethods').value = (coverConfig.methods || ['placeholder', 'zhipu', 'gemini-web', 'dalle']).join(',');
+
             // 填充步骤配置
             const stepsContainer = document.getElementById('configStepsContainer');
             stepsContainer.innerHTML = '';
@@ -1281,6 +1287,18 @@
                 config.ai_iterations = parseInt(document.getElementById('configIterations').value) || 2;
                 config.target_ai_score = parseInt(document.getElementById('configTargetScore').value) || 30;
                 config.article_length = parseInt(document.getElementById('configArticleLength').value) || 2000;
+
+                // 封面图配置
+                const coverEnabled = document.getElementById('configCoverEnabled').checked;
+                const coverStyle = document.getElementById('configCoverStyle').value;
+                const coverMethodsStr = document.getElementById('configCoverMethods').value;
+                const coverMethods = coverMethodsStr ? coverMethodsStr.split(',').map(m => m.trim()).filter(m => m) : ['placeholder', 'zhipu', 'gemini-web', 'dalle'];
+
+                config.cover = {
+                    enabled: coverEnabled,
+                    style: coverStyle,
+                    methods: coverMethods
+                };
 
                 // 收集步骤
                 const steps = [];
@@ -1364,6 +1382,38 @@
                 </div>
             </div>
 
+            <!-- 封面图配置 -->
+            <div style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px;">📸 封面图配置</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+                    <div>
+                        <label style="display: flex; align-items: center; font-size: 14px; color: #666;">
+                            <input type="checkbox" id="configCoverEnabled" style="margin-right: 8px;">
+                            启用封面图生成
+                        </label>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">封面风格：</label>
+                        <select id="configCoverStyle" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                            <option value="auto">自动选择（根据文章内容）</option>
+                            <option value="elegant">优雅简洁 (elegant)</option>
+                            <option value="tech">现代科技 (tech)</option>
+                            <option value="warm">温暖友好 (warm)</option>
+                            <option value="bold">大胆醒目 (bold)</option>
+                            <option value="minimal">极简主义 (minimal)</option>
+                            <option value="playful">趣味活泼 (playful)</option>
+                            <option value="nature">自然舒适 (nature)</option>
+                            <option value="retro">复古怀旧 (retro)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">生成方式优先级（逗号分隔，按顺序尝试）：</label>
+                    <input type="text" id="configCoverMethods" placeholder="placeholder,zhipu,gemini-web,dalle" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                    <small style="color: #999; display: block; margin-top: 5px;">可选: placeholder（本地生成）, zhipu（智谱AI）, gemini-web, dalle（OpenAI）</small>
+                </div>
+            </div>
+
             <!-- 步骤配置 -->
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -1378,15 +1428,6 @@
             <div style="background: #f0f4ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <p style="margin: 0; font-size: 14px; color: #666;">
                     <strong>可用变量：</strong> {domain} - 领域 | {title} - 标题 | {outline} - 大纲 | {article} - 文章内容 | {length} - 字数
-                </p>
-            </div>
-
-            <!-- 自动步骤说明 -->
-            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
-                <p style="margin: 0; font-size: 14px; color: #856404;">
-                    <strong>📸 自动步骤（最后执行）：</strong><br>
-                    根据文章内容自动选择风格，生成封面图并插入文章开头。<br>
-                    <small>配置方式：复制 .env.example 为 .env，设置 USE_PLACEHOLDER_COVER=true（默认）或配置 ZHIPU_API_KEY/OPENAI_API_KEY</small>
                 </p>
             </div>
 
