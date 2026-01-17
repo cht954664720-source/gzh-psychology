@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动化公众号写稿系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .status {
+            margin: 30px 0;
+            padding: 25px;
+            border-radius: 15px;
+            background: #f5f5f5;
+        }
+
+        .status.checking {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.running {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-text {
+            font-size: 16px;
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info {
+            color: #666;
+            margin-top: 25px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .success-icon {
+            font-size: 70px;
+            margin-bottom: 20px;
+        }
+
+        .instructions {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .code {
+            background: #e9ecef;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .highlight {
+            color: #667eea;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 自动化公众号写稿系统</h1>
+        <p class="subtitle">AI 驱动的一键文章生成工具</p>
+
+        <div id="status" class="status checking">
+            <div class="spinner"></div>
+            <div id="statusText" class="status-text">正在检查服务器状态...</div>
+        </div>
+
+        <div id="actions" style="display: none;">
+            <a href="http://localhost:5000" class="btn btn-primary" onclick="tryDirectOpen()">
+                🌐 打开应用界面
+            </a>
+        </div>
+
+        <div id="instructions" style="display: none;">
+            <div class="instructions">
+                <h3>📋 首次使用？请按以下步骤启动：</h3>
+                <ol>
+                    <li><span class="highlight">双击运行</span> <span class="code">一键启动.bat</span> 文件</li>
+                    <li>等待几秒，服务器会自动启动</li>
+                    <li>浏览器会自动打开应用界面</li>
+                </ol>
+            </div>
+            <div style="margin-top: 20px;">
+                <a href="http://localhost:5000" class="btn btn-success">
+                    ✅ 我已启动服务器，打开应用
+                </a>
+            </div>
+        </div>
+
+        <div id="success" style="display: none;">
+            <div class="success-icon">✅</div>
+            <h2>服务器已启动</h2>
+            <p>正在打开应用...</p>
+        </div>
+
+        <div class="info">
+            <p>💡 提示：首次使用请运行 <b>一键启动.bat</b></p>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'http://localhost:5000';
+        let checkCount = 0;
+        const MAX_CHECKS = 2;
+
+        // 检查服务器是否已启动
+        async function checkServer() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                const response = await fetch(SERVER_URL + '/api/status', {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    return true;
+                }
+            } catch (error) {
+                return false;
+            }
+            return false;
+        }
+
+        // 显示状态
+        function showStatus(type, text) {
+            const statusDiv = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+
+            statusDiv.className = 'status ' + type;
+            statusText.textContent = text;
+        }
+
+        // 显示成功
+        function showSuccess() {
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('actions').style.display = 'none';
+            document.getElementById('instructions').style.display = 'none';
+            document.getElementById('success').style.display = 'block';
+
+            // 自动打开应用
+            setTimeout(() => {
+                window.location.href = SERVER_URL;
+            }, 800);
+        }
+
+        // 显示未启动状态
+        function showNotStarted() {
+            const statusDiv = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+
+            statusDiv.className = 'status error';
+            statusText.innerHTML = '⚠️ 服务器未启动';
+
+            document.getElementById('instructions').style.display = 'block';
+        }
+
+        // 尝试直接打开
+        function tryDirectOpen() {
+            window.location.href = SERVER_URL;
+        }
+
+        // 初始化
+        window.onload = async function() {
+            // 检查服务器是否已启动
+            const isRunning = await checkServer();
+
+            if (isRunning) {
+                showSuccess();
+            } else {
+                // 服务器未启动，显示使用说明
+                showNotStarted();
+            }
+        };
+    </script>
+</body>
+</html>
