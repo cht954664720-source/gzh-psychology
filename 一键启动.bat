@@ -29,7 +29,7 @@ echo ============================================
 echo.
 
 REM 检查端口 5000 是否已被占用（Flask 是否已运行）
-netstat -ano | findstr :5000 >nul 2>&1
+netstat -ano | findstr ":5000.*LISTENING" >nul 2>&1
 if %errorlevel% equ 0 (
     echo [检测] 后台服务已在运行
     echo.
