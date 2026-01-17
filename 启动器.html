@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>自动化公众号写稿系统</title>
     <style>
         * {
@@ -25,7 +28,7 @@
             background: white;
             border-radius: 20px;
             padding: 50px;
-            max-width: 600px;
+            max-width: 650px;
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
@@ -67,7 +70,6 @@
         .status-text {
             font-size: 16px;
             line-height: 1.8;
-            white-space: pre-line;
         }
 
         .btn {
@@ -82,7 +84,7 @@
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
-            margin: 10px 5px;
+            margin: 15px 5px;
         }
 
         .btn:hover {
@@ -90,21 +92,68 @@
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
         .btn-success {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
         }
 
-        .btn-secondary {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        .instructions {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
         }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .instructions h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3em;
+        }
+
+        .instructions ol {
+            padding-left: 25px;
+        }
+
+        .instructions li {
+            margin-bottom: 15px;
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        .code {
+            background: #e9ecef;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            color: #d63384;
+            font-weight: 600;
+        }
+
+        .highlight {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .warning-text {
+            color: #856404;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .info {
+            color: #666;
+            margin-top: 25px;
+            font-size: 14px;
         }
 
         .spinner {
@@ -121,53 +170,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        .info {
-            color: #666;
-            margin-top: 25px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .success-icon {
-            font-size: 70px;
-            margin-bottom: 20px;
-        }
-
-        .instructions {
-            text-align: left;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-
-        .instructions h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .instructions ol {
-            padding-left: 20px;
-        }
-
-        .instructions li {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-
-        .code {
-            background: #e9ecef;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-        }
-
-        .highlight {
-            color: #667eea;
-            font-weight: 600;
-        }
     </style>
 </head>
 <body>
@@ -180,49 +182,48 @@
             <div id="statusText" class="status-text">正在检查服务器状态...</div>
         </div>
 
-        <div id="actions" style="display: none;">
-            <a href="http://localhost:5000" class="btn btn-primary" onclick="tryDirectOpen()">
-                🌐 打开应用界面
-            </a>
-        </div>
-
-        <div id="instructions" style="display: none;">
-            <div class="instructions">
-                <h3>📋 首次使用？请按以下步骤启动：</h3>
-                <ol>
-                    <li><span class="highlight">双击运行</span> <span class="code">一键启动.bat</span> 文件</li>
-                    <li>等待几秒，服务器会自动启动</li>
-                    <li>浏览器会自动打开应用界面</li>
-                </ol>
-            </div>
-            <div style="margin-top: 20px;">
-                <a href="http://localhost:5000" class="btn btn-success">
-                    ✅ 我已启动服务器，打开应用
-                </a>
-            </div>
-        </div>
-
-        <div id="success" style="display: none;">
-            <div class="success-icon">✅</div>
+        <div id="running" style="display: none;">
+            <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
             <h2>服务器已启动</h2>
             <p>正在打开应用...</p>
         </div>
 
+        <div id="instructions" style="display: none;">
+            <div class="warning">
+                <div class="warning-text">
+                    ⚠️ <strong>重要提示：</strong><br>
+                    网页无法直接启动后台服务！请使用以下方式启动：
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3>📋 启动方式（任选其一）：</h3>
+                <ol>
+                    <li><span class="highlight">推荐：双击</span> <span class="code">一键启动.bat</span></li>
+                    <li>或在项目目录运行：<span class="code">python app.py</span></li>
+                </ol>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <a href="http://localhost:5000" class="btn btn-success">
+                    ✅ 我已启动，打开应用
+                </a>
+            </div>
+        </div>
+
         <div class="info">
-            <p>💡 提示：首次使用请运行 <b>一键启动.bat</b></p>
+            <p>💡 <strong>提示：</strong>请双击 <span class="code">一键启动.bat</span> 启动系统</p>
         </div>
     </div>
 
     <script>
         const SERVER_URL = 'http://localhost:5000';
-        let checkCount = 0;
-        const MAX_CHECKS = 2;
 
         // 检查服务器是否已启动
         async function checkServer() {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
 
                 const response = await fetch(SERVER_URL + '/api/status', {
                     method: 'GET',
@@ -241,26 +242,15 @@
             return false;
         }
 
-        // 显示状态
-        function showStatus(type, text) {
-            const statusDiv = document.getElementById('status');
-            const statusText = document.getElementById('statusText');
-
-            statusDiv.className = 'status ' + type;
-            statusText.textContent = text;
-        }
-
         // 显示成功
-        function showSuccess() {
+        function showRunning() {
             document.getElementById('status').style.display = 'none';
-            document.getElementById('actions').style.display = 'none';
             document.getElementById('instructions').style.display = 'none';
-            document.getElementById('success').style.display = 'block';
+            document.getElementById('running').style.display = 'block';
 
-            // 自动打开应用
             setTimeout(() => {
                 window.location.href = SERVER_URL;
-            }, 800);
+            }, 1000);
         }
 
         // 显示未启动状态
@@ -269,25 +259,18 @@
             const statusText = document.getElementById('statusText');
 
             statusDiv.className = 'status error';
-            statusText.innerHTML = '⚠️ 服务器未启动';
+            statusText.innerHTML = '⚠️ 后台服务未运行';
 
             document.getElementById('instructions').style.display = 'block';
         }
 
-        // 尝试直接打开
-        function tryDirectOpen() {
-            window.location.href = SERVER_URL;
-        }
-
         // 初始化
         window.onload = async function() {
-            // 检查服务器是否已启动
             const isRunning = await checkServer();
 
             if (isRunning) {
-                showSuccess();
+                showRunning();
             } else {
-                // 服务器未启动，显示使用说明
                 showNotStarted();
             }
         };
