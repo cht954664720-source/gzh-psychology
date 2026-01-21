@@ -42,8 +42,8 @@ if %errorlevel% equ 0 (
 echo [1/3] Starting Flask service...
 echo.
 
-REM Start service in minimized window
-start /MIN "Article Generator - Backend (Do NOT close)" cmd /c "python app.py"
+REM Start service in background (no window)
+start "" /B pythonw app.py >nul 2>&1
 
 REM Wait for service to be ready
 echo [2/3] Waiting for service...
@@ -75,10 +75,9 @@ echo ============================================
 echo   System Started!
 echo ============================================
 echo.
-echo Backend service is running in background
-echo Do NOT close the "Backend" window
+echo Backend service is running in background (no window)
 echo.
-echo Close the backend window to stop service
+echo To stop the service, close this window and run: taskkill /f /im pythonw.exe
 echo.
 echo ============================================
 echo.
